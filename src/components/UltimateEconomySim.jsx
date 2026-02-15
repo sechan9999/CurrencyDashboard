@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { callOpenAI } from '../lib/openai';
 
-const UltimateEconomySim = () => {
+const UltimateEconomySim = ({ apiKey }) => {
     const [fedRate, setFedRate] = useState(2.5);
     const [data, setData] = useState([]);
+    const [aiResult, setAiResult] = useState(null);
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiError, setAiError] = useState(null);
 
     useEffect(() => {
         const points = [];
@@ -24,6 +28,42 @@ const UltimateEconomySim = () => {
         }
         setData(points);
     }, [fedRate]);
+
+    const lastPoint = data[data.length - 1];
+
+    const runAiAnalysis = async () => {
+        if (!apiKey) {
+            setAiError('OpenAI API 키를 먼저 설정해주세요. (상단 ⚙️ 버튼)');
+            return;
+        }
+        setAiLoading(true);
+        setAiError(null);
+        setAiResult(null);
+
+        try {
+            const result = await callOpenAI(
+                apiKey,
+                '당신은 거시경제 애널리스트입니다. 한국 개인투자자 관점에서 실용적인 제안을 한국어로 작성하세요. **bold** 마크다운을 사용하세요.',
+                `현재 시뮬레이션 데이터:
+- Fed 금리: ${fedRate}%
+- 예상 환율: ${lastPoint?.exchangeRate} KRW/USD
+- S&P500(원화환산): ${lastPoint?.stockKrw}
+- Gold(원화환산): ${lastPoint?.goldKrw}
+- 미국채(AGG): ${lastPoint?.bond}
+
+요청사항:
+1) 현재 국면 진단 2문장
+2) 한국 투자자용 액션 아이템 3개
+3) 리스크 경고 2개
+마크다운 불릿으로 간결하게 작성`
+            );
+            setAiResult(result);
+        } catch (e) {
+            setAiError(e.message);
+        } finally {
+            setAiLoading(false);
+        }
+    };
 
     return (
         <div className="p-5 bg-slate-900 text-slate-50 rounded-2xl font-sans">
@@ -48,7 +88,7 @@ const UltimateEconomySim = () => {
                 </div>
                 <div className="bg-sky-700 p-5 rounded-xl text-center flex flex-col justify-center">
                     <span className="text-sm text-sky-100">예상 환율 (USD/KRW)</span>
-                    <div className="text-3xl font-bold my-1">₩{data[data.length - 1]?.exchangeRate}</div>
+                    <div className="text-3xl font-bold my-1">₩{lastPoint?.exchangeRate}</div>
                 </div>
             </div>
 
@@ -70,6 +110,58 @@ const UltimateEconomySim = () => {
                 </ResponsiveContainer>
             </div>
 
+            {/* AI Market Analysis */}
+            <div className="mt-5 p-5 bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-xl border border-purple-500/20">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-purple-300 font-bold flex items-center gap-2">
+                        🤖 AI 마켓 분석
+                    </h3>
+                    <button
+                        onClick={runAiAnalysis}
+                        disabled={aiLoading}
+                        className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg text-sm font-semibold hover:from-purple-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                        {aiLoading ? '분석 중...' : '분석 실행'}
+                    </button>
+                </div>
+
+                {aiLoading && (
+                    <div className="flex items-center gap-3 text-purple-300 py-4">
+                        <div className="w-5 h-5 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
+                        OpenAI에서 시장 분석을 생성하고 있습니다...
+                    </div>
+                )}
+
+                {aiError && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+                        {aiError}
+                    </div>
+                )}
+
+                {aiResult && (
+                    <div className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
+                        {aiResult.cached && (
+                            <div className="text-xs text-purple-400 mb-2 flex items-center gap-1">
+                                ⚡ 캐시된 응답 (30분 TTL)
+                            </div>
+                        )}
+                        <div dangerouslySetInnerHTML={{
+                            __html: aiResult.text
+                                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
+                                .replace(/\n/g, '<br/>')
+                        }} />
+                    </div>
+                )}
+
+                {!aiLoading && !aiError && !aiResult && (
+                    <p className="text-slate-500 text-sm">
+                        금리를 조절한 후 "분석 실행" 버튼을 눌러 AI 기반 시장 분석을 받아보세요.
+                        {!apiKey && <span className="text-amber-400 block mt-1">⚠️ 먼저 상단의 ⚙️ 버튼으로 OpenAI API 키를 설정하세요.</span>}
+                    </p>
+                )}
+            </div>
+
+            {/* Static Analysis */}
             <div className="mt-5 p-5 bg-slate-800 rounded-xl text-[15px] leading-relaxed border border-slate-700">
                 <strong className="block mb-2.5 text-sky-400">💡 한국 투자자를 위한 분석:</strong>
                 <ul className="pl-5 text-slate-300 m-0 space-y-2">
