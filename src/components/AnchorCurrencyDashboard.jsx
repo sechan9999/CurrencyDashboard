@@ -13,8 +13,6 @@ import {
     Wallet
 } from 'lucide-react';
 import {
-    LineChart,
-    Line,
     XAxis,
     YAxis,
     CartesianGrid,
@@ -46,20 +44,6 @@ const HISTORICAL_DATA = [
     { year: '2024', usd_share: 58, trade_vol: 125 },
 ];
 
-// 환율 데이터 (원/달러)
-const EXCHANGE_RATE_DATA = [
-    { year: '2015', rate: 1131 },
-    { year: '2016', rate: 1160 },
-    { year: '2017', rate: 1071 },
-    { year: '2018', rate: 1100 },
-    { year: '2019', rate: 1166 },
-    { year: '2020', rate: 1180 },
-    { year: '2021', rate: 1144 },
-    { year: '2022', rate: 1292 },
-    { year: '2023', rate: 1305 },
-    { year: '2024', rate: 1380 },
-];
-
 // --- Components ---
 
 const MetricCard = ({ title, value, subtext, icon: Icon, trend }) => (
@@ -77,13 +61,6 @@ const MetricCard = ({ title, value, subtext, icon: Icon, trend }) => (
         <h3 className="text-slate-400 text-sm font-medium mb-1">{title}</h3>
         <div className="text-2xl font-bold text-white mb-1">{value}</div>
         <p className="text-slate-500 text-xs">{subtext}</p>
-    </div>
-);
-
-const SectionHeader = ({ title, subtitle }) => (
-    <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white mb-2">{title}</h2>
-        <p className="text-slate-400 max-w-2xl">{subtitle}</p>
     </div>
 );
 
@@ -336,52 +313,36 @@ const ValueStorageContent = () => (
     </div>
 );
 
-// 환율 변화 추이 차트
-// 환율 변화 추이 차트 (실시간)
-// 기간별 더미 데이터 생성기
+// 시드 기반 의사 난수 생성 (동일 입력 → 동일 출력, 리렌더링 안정)
+function seededRandom(seed) {
+    let s = seed;
+    return () => {
+        s = (s * 16807 + 0) % 2147483647;
+        return (s - 1) / 2147483646;
+    };
+}
+
+// 기간별 차트 데이터 생성기
 const generateData = (period, currentRate) => {
     const data = [];
     let points = 0;
     let volatility = 0;
-    let labelFormat = '';
 
     switch (period) {
-        case '1D':
-            points = 24; // 시간별
-            volatility = 2;
-            labelFormat = 'time';
-            break;
-        case '1M':
-            points = 30; // 일별
-            volatility = 15;
-            labelFormat = 'day';
-            break;
-        case '1Y':
-            points = 12; // 월별
-            volatility = 50;
-            labelFormat = 'month';
-            break;
-        case '5Y':
-            points = 60; // 월별
-            volatility = 150;
-            labelFormat = 'year';
-            break;
-        case 'Max':
-            points = 100;
-            volatility = 300;
-            labelFormat = 'year';
-            break;
-        default:
-            points = 30;
-            volatility = 10;
+        case '1D': points = 24; volatility = 2; break;
+        case '1M': points = 30; volatility = 15; break;
+        case '1Y': points = 12; volatility = 50; break;
+        case '5Y': points = 60; volatility = 150; break;
+        case 'Max': points = 100; volatility = 300; break;
+        default: points = 30; volatility = 10;
     }
 
     let rate = currentRate;
     const now = new Date();
+    const rng = seededRandom(Math.round(currentRate * 100) + points);
 
     for (let i = points; i >= 0; i--) {
-        // 랜덤 워크 시뮬레이션
-        const change = (Math.random() - 0.5) * volatility;
+        const change = (rng() - 0.5) * volatility;
         rate += change;
 
         // 날짜 라벨 생성
@@ -852,7 +813,7 @@ const AnchorCurrencyDashboard = () => {
 
                 {/* Footer */}
                 <footer className="border-t border-slate-800 pt-8 text-center text-slate-500 text-sm">
-                    <p>© 2024 기축통화 대시보드. 교육 목적으로 제작되었습니다.</p>
+                    <p>© 2026 기축통화 대시보드. 교육 목적으로 제작되었습니다.</p>
                 </footer>
 
             </div>
