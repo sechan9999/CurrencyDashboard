@@ -2,6 +2,7 @@ import { useState } from 'react'
 import UltimateEconomySim from './components/UltimateEconomySim'
 import AnchorCurrencyDashboard from './components/AnchorCurrencyDashboard'
 import SystemMonitor from './components/SystemMonitor'
+import AIPortfolioPlatform from './components/AIPortfolioPlatform'
 import { testApiKey } from './lib/openai'
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
         { id: 'dashboard', label: '기축통화 대시보드', color: 'amber' },
         { id: 'simulator', label: '자산 시뮬레이터', color: 'blue' },
         { id: 'monitor', label: '시스템 모니터링', color: 'green' },
+        { id: 'aiplatform', label: 'AI 투자 플랫폼', color: 'purple' },
     ]
 
     const getTabClasses = (tab) => {
@@ -45,6 +47,7 @@ function App() {
             amber: active ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50' : '',
             blue: active ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50' : '',
             green: active ? 'bg-green-500/20 text-green-400 border border-green-500/50' : '',
+            purple: active ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50' : '',
         }
         return active
             ? `px-4 py-2 rounded-lg text-sm font-medium transition-all ${colorMap[tab.color]}`
@@ -92,6 +95,11 @@ function App() {
                 </div>
             )}
             {view === 'monitor' && <SystemMonitor apiKey={apiKey} />}
+            {view === 'aiplatform' && (
+                <div className="max-w-6xl mx-auto">
+                    <AIPortfolioPlatform apiKey={apiKey} />
+                </div>
+            )}
 
             {/* API Key Modal */}
             {showModal && (
