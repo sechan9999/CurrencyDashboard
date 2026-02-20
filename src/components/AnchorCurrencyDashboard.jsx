@@ -325,42 +325,69 @@ function seededRandom(seed) {
 // 기간별 차트 데이터 생성기
 const generateData = (period, currentRate) => {
     const data = [];
+    const now = new Date();
+
+    // Google 차트와 유사한 1년치 템플릿 (1450원 기준 상대값 분산)
+    // 총 84개 포인트
+    const template1Y = [
+        -30, -28, -20, -15, -25, -10, 5, 0, 15, 25, 20, 10, 30, -10, -35, -25, -30, -80, -90, -70, -45, -55, -50, -80, -95, -100, -85, -95, -100, -80, -90, -70, -60, -80, -70, -55, -65, -75, -60, -65, -50, -45, -55, -60, -50, -40, -55, -50, -45, -20, -10, -15, -25, -5, 5, -15, -10, 0, 10, 15, -5, 5, 15, 10, 15, 15, 10, 15, 20, -20, -15, -20, 5, 20, 25, -5, -20, -25, -5, 10, -5, -15, -10, 0
+    ];
+
+    if (period === '1Y') {
+        const points = template1Y.length - 1;
+        // 1년치 데이터를 위해 84개의 포인트를 365일에 고르게 분배
+        for (let i = points; i >= 0; i--) {
+            const templateIndex = points - i;
+            const templateValue = template1Y[templateIndex];
+            // 현재 기준 환율의 등락 비율에 맞게 템플릿 스케일링 (1450 기준)
+            const scaledChange = templateValue * (currentRate / 1450);
+            const rate = currentRate + scaledChange;
+
+            const d = new Date(now);
+            d.setDate(d.getDate() - (i * Math.round(365 / points)));
+
+            // X축 라벨 포맷 (월 이름)
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const label = i % Math.floor(points / 6) === 0 ? monthNames[d.getMonth()] : '';
+
+            data.push({
+                date: label,
+                rate: Number(rate.toFixed(2))
+            });
+        }
+        return data;
+    }
+
     let points = 0;
     let volatility = 0;
 
     switch (period) {
         case '1D': points = 24; volatility = 2; break;
         case '1M': points = 30; volatility = 15; break;
-        case '1Y': points = 12; volatility = 50; break;
         case '5Y': points = 60; volatility = 150; break;
         case 'Max': points = 100; volatility = 300; break;
         default: points = 30; volatility = 10;
     }
 
     let rate = currentRate;
-    const now = new Date();
     const rng = seededRandom(Math.round(currentRate * 100) + points);
 
     for (let i = points; i >= 0; i--) {
         const change = (rng() - 0.5) * volatility;
         rate += change;
 
-        // 날짜 라벨 생성
         let label = '';
         const d = new Date(now);
 
         if (period === '1D') {
             d.setHours(d.getHours() - i);
-            label = `${d.getHours()}:00`;
+            label = i % 4 === 0 ? `${d.getHours()}:00` : '';
         } else if (period === '1M') {
             d.setDate(d.getDate() - i);
-            label = `${d.getMonth() + 1}/${d.getDate()}`;
-        } else if (period === '1Y') {
+            label = i % 5 === 0 ? `${d.getMonth() + 1}/${d.getDate()}` : '';
+        } else if (period === '5Y' || period === 'Max') {
             d.setMonth(d.getMonth() - i);
-            label = `${d.getFullYear()}.${d.getMonth() + 1}`;
-        } else {
-            d.setMonth(d.getMonth() - i);
-            label = `${d.getFullYear()}`;
+            label = i % 12 === 0 ? `${d.getFullYear()}` : '';
         }
 
         data.push({
@@ -462,8 +489,8 @@ const ExchangeRateChart = ({ fedRate }) => {
                                 key={p}
                                 onClick={() => setPeriod(p)}
                                 className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${period === p
-                                        ? 'bg-slate-600 text-white shadow-sm'
-                                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
+                                    ? 'bg-slate-600 text-white shadow-sm'
+                                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
                                     }`}
                             >
                                 {p}
