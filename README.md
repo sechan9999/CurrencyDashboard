@@ -14,7 +14,7 @@
 
 ### 1. 🤖 AI 투자 플랫폼 (AI Macro-Economic Investment Platform)
 - **FRED Data Pipeline**: 미국 연준 API 인플레이션(CPI), 기준금리, 달러 인덱스(DXY) 실시간 연동
-- **Machine Learning**: XGBoost 및 LSTM 기반의 실시간 USD/KRW 환율 예측
+- **Machine Learning**: XGBoost 기반의 USD/KRW 환율 예측 모델
 - **Risk Simulation**: 몬테카를로 시뮬레이션(Geometric Brownian Motion)을 통한 자산가치 분포 분석
 - **Portfolio Optimizer**: 현대 포트폴리오 이론(MPT)에 기반한 최적 자산배분 (Mean-Variance, 최대 Sharpe Ratio)
 - **Azure OpenAI Insights**: GPT-4o를 이용한 매크로 투자 전략 코멘트 제공
